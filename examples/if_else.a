@@ -1,0 +1,14 @@
+fn main() {
+    x := 2
+    if 1+1 == x {
+        println("correct")
+    } else if x > 10 {
+        println("oops")
+    } else {
+        println("oops2")
+    }
+
+    if 10%2 == 1 {
+        println("ten is odd")
+    }
+}

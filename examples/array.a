@@ -1,0 +1,27 @@
+fn main() {
+    // array type; the type hint is redundant
+    a []str := ["a", "b", "c"]
+    println(a)
+
+    // type []bool
+    b := [true, true, false]
+
+    for el in b {
+        // loop over elements in an array
+        println(el)
+    }
+
+    // c has value true
+    c := b[0]
+    println(c)
+
+    // d is [true, false]
+    d := b[1:3]
+
+    // e has type [][]int
+    e := [[1], [2], [3]]
+    println(e)
+    println(e[0][1])
+
+
+}

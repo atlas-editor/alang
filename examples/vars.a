@@ -1,0 +1,21 @@
+fn main() {
+    a := "string" // type str
+    println(a)
+
+    b := 12 // type int
+    println(b)
+
+    c := 1.1 // type float
+    println(c)
+
+    d := true // type bool
+    println(d)
+
+    // type hint
+    e str := "abc"
+    println(e)
+
+    // compiler error vvv; g is of type int
+    // g float := 12
+    println(g)
+}

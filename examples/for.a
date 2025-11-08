@@ -1,0 +1,17 @@
+fn main() {
+    for i in 5:10 {
+        println(i)
+    }
+
+    mut j := 2
+    for j < 5 {
+        println(j)
+        j++
+    }
+
+    for {
+        println("potentially infinite loop")
+        // unless we break
+        break
+    }
+}

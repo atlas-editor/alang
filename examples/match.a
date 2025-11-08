@@ -1,0 +1,32 @@
+fn main() {
+    a := 12
+
+    match a {
+        1 => {
+            println(a, "== 1")
+        }
+        2 => {
+            println(a, "== 2")
+        }
+        _ => {
+            println(a "!= 1 nor 2")
+        }
+    }
+
+
+    // result type T? (akin to Rust's Result<T, E>), can contain T or err(...)
+    b int? := 13
+    println(b)
+
+    c int? := err("undefined")
+
+    match c {
+        val => {
+            // val has type int
+            println("c contains a non-error value", val)
+        }
+        err(e) => {
+            println("c contains error value", e)
+        }
+    }
+}

@@ -1,0 +1,18 @@
+fn main() {
+    // an empty hashmap with string keys and integer values
+    m map[str, int] := {}
+    println(m)
+
+    // type map[int, int]
+    d := {12: 1, 13:2, 14: 3}
+    println(d)
+
+    // access value by key
+    e := d[12]
+    println(e)
+
+    for k, v in d {
+        // loop over key value pairs in map
+        println(k, "->", v)
+    }
+}
