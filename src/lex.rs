@@ -1,4 +1,7 @@
-use crate::types::Token;
+use crate::{
+    parsingerr,
+    types::{ParsingError, Token},
+};
 
 pub struct Lexer<'a> {
     data: &'a [u8],
@@ -26,7 +29,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_literal(&mut self) -> Option<Token> {
+    fn read_literal(&mut self) -> Result<Token, ParsingError> {
         let start = self.pos - 1;
         loop {
             match self.read_byte() {
@@ -36,8 +39,11 @@ impl<'a> Lexer<'a> {
                         self.unread_byte();
                     }
                     let lit = &self.data[start..self.pos];
-                    return Lexer::read_kw(lit)
-                        .or_else(|| Some(Token::Ident(String::from_utf8_lossy(lit).to_string())));
+
+                    return Lexer::read_kw(lit).map_or_else(
+                        || Ok(Token::Ident(String::from_utf8_lossy(lit).to_string())),
+                        Ok,
+                    );
                 }
             }
         }
@@ -56,20 +62,20 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_string(&mut self) -> Option<Token> {
+    fn read_string(&mut self) -> Result<Token, ParsingError> {
         // todo: allow escaping chars
         let start = self.pos;
         loop {
-            let b = self.read_byte()?;
+            let b = self.read_byte().ok_or(parsingerr!("unexpected EOF"))?;
             if b == b'"' {
-                return Some(Token::String(
+                return Ok(Token::String(
                     String::from_utf8_lossy(&self.data[start..self.pos - 1]).to_string(),
                 ));
             }
         }
     }
 
-    fn read_number(&mut self) -> Option<Token> {
+    fn read_number(&mut self) -> Result<Token, ParsingError> {
         let start = self.pos - 1;
         loop {
             match self.read_byte() {
@@ -80,11 +86,9 @@ impl<'a> Lexer<'a> {
                     }
                     let num = &self.data[start..self.pos];
                     if num.contains(&b'.') {
-                        let f: f64 = str::from_utf8(num).ok()?.parse().ok()?;
-                        return Some(Token::Float(f));
+                        return Ok(Token::Float(str::from_utf8(num)?.parse()?));
                     } else {
-                        let n: i64 = str::from_utf8(num).ok()?.parse().ok()?;
-                        return Some(Token::Int(n));
+                        return Ok(Token::Int(str::from_utf8(num)?.parse()?));
                     }
                 }
             }
@@ -124,35 +128,43 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn read(&mut self) -> Option<Token> {
+    pub fn read(&mut self) -> Result<Token, ParsingError> {
         self.skip_whitespace_and_comments();
 
-        match self.read_byte()? {
-            b';' => Some(Token::Semicolon),
-            b'(' => Some(Token::LParen),
-            b')' => Some(Token::RParen),
-            b'{' => Some(Token::LBrace),
-            b'}' => Some(Token::RBrace),
-            b':' => match self.read_byte() {
-                Some(b'=') => Some(Token::Assign),
-                _ => {
-                    self.unread_byte();
-                    Some(Token::Colon)
+        match self.read_byte() {
+            None => Ok(Token::Eof),
+            Some(b) => match b {
+                b';' => Ok(Token::Semicolon),
+                b'(' => Ok(Token::LParen),
+                b')' => Ok(Token::RParen),
+                b'{' => Ok(Token::LBrace),
+                b'}' => Ok(Token::RBrace),
+                b':' => match self.read_byte() {
+                    Some(b'=') => Ok(Token::Assign),
+                    _ => {
+                        self.unread_byte();
+                        Ok(Token::Colon)
+                    }
+                },
+                b'"' => self.read_string(),
+                x if x.is_ascii_alphabetic() => self.read_literal(),
+                x if x.is_ascii_digit() || x == b'.' || x == b'+' || x == b'-' => {
+                    self.read_number()
                 }
+                x => todo!("unexpected char `{}`", x as char),
             },
-            b'"' => self.read_string(),
-            x if x.is_ascii_alphabetic() => self.read_literal(),
-            x if x.is_ascii_digit() || x == b'.' || x == b'+' || x == b'-' => self.read_number(),
-            x => todo!("unexpected char `{}`", x as char),
         }
     }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = Token;
+    type Item = Result<Token, ParsingError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.read()
+        match self.read() {
+            Ok(Token::Eof) => None,
+            x => Some(x),
+        }
     }
 }
 

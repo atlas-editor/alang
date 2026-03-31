@@ -1,6 +1,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     Illegal,
+    Eof,
     Ident(String),
     Assign,
     // punctuation
@@ -24,14 +25,13 @@ pub enum Token {
     Bool(bool),
 }
 
-// TODO: refactor using vvv
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParsingError(pub String);
 
 #[macro_export]
 macro_rules! parsingerr {
     ($($arg:tt)*) => {
-        PdfError(format!($($arg)*))
+        ParsingError(format!($($arg)*))
     };
 }
 
