@@ -57,6 +57,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_string(&mut self) -> Option<Token> {
+        // todo: allow escaping chars
         let start = self.pos;
         loop {
             let b = self.read_byte()?;
