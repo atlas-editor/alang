@@ -14,14 +14,14 @@ fn main() {
     }
 
 
-    // result type T? (akin to Rust's Result<T, E>), can contain T or err(...)
-    b int? := 13
+    // result type res[T] (akin to Rust's Result<T, E>), can contain ok(T) or err(...)
+    b res[int] := ok(13)
     println(b)
 
-    c int? := err("undefined")
+    c res[int] := err("undefined")
 
     match c {
-        val => {
+        ok(val) => {
             // val has type int
             println("c contains a non-error value", val)
         }

@@ -1,9 +1,9 @@
 fn main() {
     // array type; the type hint is redundant
-    a []str := ["a", "b", "c"]
+    a arr[str] := ["a", "b", "c"]
     println(a)
 
-    // type []bool
+    // type arr[bool]
     b := [true, true, false]
 
     for el in b {
@@ -18,10 +18,8 @@ fn main() {
     // d is [true, false]
     d := b[1:3]
 
-    // e has type [][]int
+    // e has type arr[arr[int]]
     e := [[1], [2], [3]]
     println(e)
     println(e[0][1])
-
-
 }

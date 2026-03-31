@@ -1,0 +1,17 @@
+enum json_value {
+    string str
+    number float
+    boolean bool
+    null
+    array arr[json_value]
+    object map[str, json_value]
+}
+
+fn main() {
+    s := json_value::number(3.13)
+    t json_value := json_value::null
+
+    match s {
+        string(s) => {}
+    }
+}

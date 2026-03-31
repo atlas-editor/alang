@@ -1,0 +1,21 @@
+struct child {
+    name str
+    age int
+}
+
+impl child {
+    fn new(name str, age int) child {
+        return child{name, age}
+    }
+
+    fn print_age(self) {
+        println(self.age)
+    }
+}
+
+
+fn main() {
+    c := child::new("am", 2)
+    println(c)
+    c.print_age()
+}
