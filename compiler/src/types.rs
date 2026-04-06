@@ -1,31 +1,4 @@
 #[derive(Clone, Debug, PartialEq)]
-pub enum Token {
-    Illegal,
-    Eof,
-    Ident(String),
-    Assign,
-    // punctuation
-    Semicolon,
-    Colon,
-    LParen,
-    RParen,
-    LBrace,
-    RBrace,
-    // keywords
-    FunctionDef,
-    // builtin type identifiers
-    StrType,
-    FloatType,
-    IntType,
-    BoolType,
-    // type val
-    String(String),
-    Int(i64),
-    Float(f64),
-    Bool(bool),
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct ParsingError(pub String);
 
 #[macro_export]

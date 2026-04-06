@@ -1,8 +1,62 @@
-use crate::{
-    parsingerr,
-    types::{ParsingError, Token},
-};
+use crate::{parsingerr, types::ParsingError};
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Token {
+    Eof,
+    Ident(String),
+    Assign,
+    Equals,
+    // basic relations
+    LessThan,
+    GreaterThan,
+    // punctuation
+    Semicolon,
+    Comma,
+    Dot,
+    Colon,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    LSqareBracket,
+    RSqareBracket,
+    Query,
+    Exclamation,
+    // keywords
+    FunctionDef,
+    For,
+    If,
+    Return,
+    Use,
+    Var,
+    // builtin type identifiers
+    StrType,
+    FloatType,
+    IntType,
+    BoolType,
+    ByteType,
+    ArrayType,
+    MapType,
+    StructType,
+    OptType,
+    ResType,
+    // type val
+    String(String),
+    Int(i64),
+    Float(f64),
+    Bool(bool),
+    Byte(u8),
+    // arithmetic operations
+    Plus,
+    Minus,
+    Mul,
+    Mod,
+    Pow,
+    // ambiguous
+    Slash, // division or import module separator
+}
+
+#[derive(Clone)]
 pub struct Lexer<'a> {
     data: &'a [u8],
     pos: usize,
@@ -40,10 +94,8 @@ impl<'a> Lexer<'a> {
                     }
                     let lit = &self.data[start..self.pos];
 
-                    return Lexer::read_kw(lit).map_or_else(
-                        || Ok(Token::Ident(String::from_utf8_lossy(lit).to_string())),
-                        Ok,
-                    );
+                    return Lexer::read_kw(lit)
+                        .map_or_else(|| Ok(Token::Ident(str::from_utf8(lit)?.to_owned())), Ok);
                 }
             }
         }
@@ -52,10 +104,21 @@ impl<'a> Lexer<'a> {
     fn read_kw(kw: &[u8]) -> Option<Token> {
         match kw {
             b"fn" => Some(Token::FunctionDef),
+            b"for" => Some(Token::For),
+            b"if" => Some(Token::If),
+            b"use" => Some(Token::Use),
+            b"return" => Some(Token::Return),
+            b"var" => Some(Token::Var),
             b"str" => Some(Token::StrType),
             b"float" => Some(Token::FloatType),
             b"int" => Some(Token::IntType),
             b"bool" => Some(Token::BoolType),
+            b"byte" => Some(Token::ByteType),
+            b"arr" => Some(Token::ArrayType),
+            b"map" => Some(Token::MapType),
+            b"struct" => Some(Token::StructType),
+            b"opt" => Some(Token::OptType),
+            b"res" => Some(Token::ResType),
             b"true" => Some(Token::Bool(true)),
             b"false" => Some(Token::Bool(false)),
             _ => None,
@@ -75,6 +138,16 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    fn read_byte_value(&mut self) -> Result<Token, ParsingError> {
+        // todo: allow escaping chars
+        let val = self.read_byte().ok_or(parsingerr!("unexpected EOF"))?;
+        match self.read_byte() {
+            Some(b'\'') => {}
+            _ => return Err(parsingerr!("expected '")),
+        }
+        Ok(Token::Byte(val))
+    }
+
     fn read_number(&mut self) -> Result<Token, ParsingError> {
         let start = self.pos - 1;
         loop {
@@ -85,7 +158,10 @@ impl<'a> Lexer<'a> {
                         self.unread_byte();
                     }
                     let num = &self.data[start..self.pos];
-                    if num.contains(&b'.') {
+
+                    if num == b"." {
+                        return Ok(Token::Dot);
+                    } else if num.contains(&b'.') {
                         return Ok(Token::Float(str::from_utf8(num)?.parse()?));
                     } else {
                         return Ok(Token::Int(str::from_utf8(num)?.parse()?));
@@ -135,10 +211,15 @@ impl<'a> Lexer<'a> {
             None => Ok(Token::Eof),
             Some(b) => match b {
                 b';' => Ok(Token::Semicolon),
+                b',' => Ok(Token::Comma),
                 b'(' => Ok(Token::LParen),
                 b')' => Ok(Token::RParen),
                 b'{' => Ok(Token::LBrace),
                 b'}' => Ok(Token::RBrace),
+                b'[' => Ok(Token::LSqareBracket),
+                b']' => Ok(Token::RSqareBracket),
+                b'?' => Ok(Token::Query),
+                b'!' => Ok(Token::Exclamation),
                 b':' => match self.read_byte() {
                     Some(b'=') => Ok(Token::Assign),
                     _ => {
@@ -146,11 +227,30 @@ impl<'a> Lexer<'a> {
                         Ok(Token::Colon)
                     }
                 },
+                b'+' => Ok(Token::Plus),
+                b'-' => Ok(Token::Minus),
+                b'*' => match self.read_byte() {
+                    Some(b'*') => Ok(Token::Pow),
+                    _ => {
+                        self.unread_byte();
+                        Ok(Token::Mul)
+                    }
+                },
+                b'/' => Ok(Token::Slash),
+                b'%' => Ok(Token::Mod),
+                b'=' => Ok(Token::Equals),
+                b'<' => Ok(Token::LessThan),
+                b'>' => Ok(Token::GreaterThan),
+                b'b' => match self.read_byte() {
+                    Some(b'\'') => self.read_byte_value(),
+                    _ => {
+                        self.unread_byte();
+                        self.read_literal()
+                    }
+                },
                 b'"' => self.read_string(),
                 x if x.is_ascii_alphabetic() => self.read_literal(),
-                x if x.is_ascii_digit() || x == b'.' || x == b'+' || x == b'-' => {
-                    self.read_number()
-                }
+                x if x.is_ascii_digit() || x == b'.' => self.read_number(),
                 x => todo!("unexpected char `{}`", x as char),
             },
         }
@@ -201,27 +301,28 @@ mod tests {
 
     #[test]
     fn test_next_token_vars_comments() {
-        let input = r#"fn main() {
-            a := "string"; // type str
-            println(a);
+        let input = r#"
+fn main() {
+        a := "string"; // type str
+        println(a);
 
-            b := 12; // type int
-            println(b);
+        b := 12; // type int
+        println(b);
 
-            c := 1.1; // type float
-            println(c);
+        c := 1.1; // type float
+        println(c);
 
-            d := true; // type bool
-            println(d);
+        d := true; // type bool
+        println(d);
 
-            // type hint
-            e str := "abc";
-            println(e);
+        // type hint
+        e str := "abc";
+        println(e);
 
-            // compiler error vvv; g is of type int
-            // g float := 12;
-            // println(g);
-        }
+        // compiler error vvv; g is of type int
+        // g float := 12;
+        // println(g);
+    }
 "#;
         let mut l = Lexer::new(input.as_bytes());
         let expected = [
