@@ -1,0 +1,25 @@
+fn is_prime(n int) bool {
+    if n < 2 {
+        return false
+    }
+    if n == 2 {
+        return true
+    }
+
+    for f := 2; f < n; f++ {
+        if n % f == 0 {
+            return false
+        }
+    }
+    return true
+}
+
+fn p_sq_idx_prod(x arr[int]) int {
+    r := 1
+    for i := 2; i*i < x.len(); idx++ {
+        if is_prime(i) {
+            r = r * x[i*i]
+        }
+    }
+    return r
+}
